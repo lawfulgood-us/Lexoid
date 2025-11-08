@@ -222,3 +222,8 @@
 
 ### Changed
 * Updated `parse_image_with_gemini` to support both standard Gemini API and Vertex AI endpoints
+* Added `role` field to request payload for Vertex AI compatibility
+* Simplified authentication to use Application Default Credentials only
+
+### Fixed
+* Vertex AI API request format now includes required `role: user` field in contents

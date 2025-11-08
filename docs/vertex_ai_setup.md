@@ -129,11 +129,23 @@ result = parse("document.pdf", parser_type="LLM_PARSE")
 
 ### Available Models
 
-Vertex AI supports the same Gemini models as the public API:
-- `gemini-2.0-flash` (fast, cost-effective)
-- `gemini-1.5-pro` (most capable)
-- `gemini-1.5-flash` (balanced)
-- `gemini-2.5-pro` (with thinking capabilities)
+Vertex AI supports various Gemini models for document parsing:
+
+**Recommended for Production:**
+- ⭐ **`gemini-1.5-flash`** - Best balance of speed, accuracy, and cost (RECOMMENDED)
+- **`gemini-1.5-pro`** - Highest accuracy for complex documents (slower, more expensive)
+- **`gemini-1.0-pro`** - Legacy model (not recommended for new projects)
+
+**Experimental/Preview:**
+- **`gemini-2.0-flash-exp`** - Latest generation, experimental
+- **`gemini-2.5-flash`** - Preview (availability varies by region)
+- **`gemini-2.5-pro`** - Preview (availability varies by region)
+
+**For Legal Document Parsing:**
+- Use **`gemini-1.5-flash`** for most documents (fast, cost-effective, accurate)
+- Use **`gemini-1.5-pro`** for complex contracts with tables and charts (highest accuracy)
+
+**Note:** Preview models may have breaking changes. Check the [Vertex AI model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models) for the latest availability in your region.
 
 ### Example: Legal Document Processing
 

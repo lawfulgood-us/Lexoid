@@ -58,6 +58,13 @@ class TestVertexAI:
         assert 'Authorization' in headers
         assert headers['Authorization'] == 'Bearer mock-token'
         
+        # Verify payload includes role field for Vertex AI
+        payload = call_args[1]['json']
+        assert 'contents' in payload
+        assert len(payload['contents']) > 0
+        assert 'role' in payload['contents'][0]
+        assert payload['contents'][0]['role'] == 'user'
+        
         # Verify result
         assert result['raw'] == 'Test output'
         assert result['token_usage']['input'] == 100
@@ -98,6 +105,12 @@ class TestVertexAI:
         # Verify no OAuth2 authentication (API key is in URL)
         headers = call_args[1]['headers']
         assert 'Authorization' not in headers
+        
+        # Verify payload does NOT include role field for standard Gemini API
+        payload = call_args[1]['json']
+        assert 'contents' in payload
+        assert len(payload['contents']) > 0
+        assert 'role' not in payload['contents'][0]
         
         # Verify result
         assert result['raw'] == 'Test output'

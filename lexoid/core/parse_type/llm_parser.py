@@ -423,15 +423,20 @@ def parse_image_with_gemini(
     if kwargs["model"] == "gemini-2.5-pro":
         generation_config["thinkingConfig"] = {"thinkingBudget": 128}
 
+    # Build content structure
+    content = {
+        "parts": [
+            {"text": prompt},
+            {"inline_data": {"mime_type": mime_type, "data": base64_file}},
+        ]
+    }
+    
+    # Vertex AI requires explicit "role" field, standard Gemini API doesn't
+    if use_vertex_ai:
+        content["role"] = "user"
+    
     payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt},
-                    {"inline_data": {"mime_type": mime_type, "data": base64_file}},
-                ]
-            }
-        ],
+        "contents": [content],
         "generationConfig": generation_config,
     }
 

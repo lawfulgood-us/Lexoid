@@ -403,8 +403,9 @@ def parse_image_with_gemini(
     base64_file: str, mime_type: str = "image/png", **kwargs
 ) -> List[Dict] | str:
     # Check if using Vertex AI or standard Gemini API
-    gcp_project = os.environ.get("GCP_PROJECT")
-    gcp_region = os.environ.get("GCP_REGION", "us-west1")
+    # Support both GCP_PROJECT and GOOGLE_CLOUD_PROJECT (standard GCP env var)
+    gcp_project = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
+    gcp_region = os.environ.get("GCP_REGION") or os.environ.get("GOOGLE_CLOUD_REGION", "us-west1")
 
     use_vertex_ai = gcp_project is not None
     

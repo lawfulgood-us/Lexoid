@@ -63,23 +63,33 @@ gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
 Set the following environment variables to enable Vertex AI mode:
 
 ```bash
-# Required: Your Google Cloud project ID
+# Required: Your Google Cloud project ID (use either variable name)
 export GCP_PROJECT="your-project-id"
+# OR
+export GOOGLE_CLOUD_PROJECT="your-project-id"  # Standard GCP variable
 
 # Optional: Region (defaults to us-west1)
 export GCP_REGION="us-west1"
+# OR
+export GOOGLE_CLOUD_REGION="us-west1"  # Standard GCP variable
 ```
 
 You can also create a `.env` file:
 
 ```env
+# Lexoid will check both GCP_PROJECT and GOOGLE_CLOUD_PROJECT
 GCP_PROJECT=your-project-id
 GCP_REGION=us-west1
+
+# Setting both prevents warnings from Google Cloud SDK:
+GOOGLE_CLOUD_PROJECT=your-project-id
 ```
 
 **Authentication** is handled automatically via Application Default Credentials (ADC):
 - **Locally**: Uses credentials from `gcloud auth application-default login`
 - **In Cloud Run**: Uses the attached service account automatically
+
+**Note:** Setting `GOOGLE_CLOUD_PROJECT` in addition to `GCP_PROJECT` will suppress warnings from the Google Cloud SDK libraries.
 
 ## Usage
 
@@ -129,23 +139,25 @@ result = parse("document.pdf", parser_type="LLM_PARSE")
 
 ### Available Models
 
-Vertex AI supports various Gemini models for document parsing:
+**⚠️ IMPORTANT:** Gemini 1.5 models were deprecated on September 24, 2025 and are no longer available.
+
+Vertex AI currently supports these Gemini models for document parsing:
 
 **Recommended for Production:**
-- ⭐ **`gemini-1.5-flash`** - Best balance of speed, accuracy, and cost (RECOMMENDED)
-- **`gemini-1.5-pro`** - Highest accuracy for complex documents (slower, more expensive)
-- **`gemini-1.0-pro`** - Legacy model (not recommended for new projects)
+- ⭐ **`gemini-2.0-flash-exp`** - Fast, cost-effective, good accuracy (RECOMMENDED)
+- **`gemini-2.5-flash`** - Generally Available (GA), better accuracy
+- **`gemini-2.5-pro`** - Highest accuracy for complex documents (slower, more expensive)
 
-**Experimental/Preview:**
-- **`gemini-2.0-flash-exp`** - Latest generation, experimental
-- **`gemini-2.5-flash`** - Preview (availability varies by region)
-- **`gemini-2.5-pro`** - Preview (availability varies by region)
+**Legacy (Deprecated):**
+- ❌ ~~`gemini-1.5-flash`~~ - DEPRECATED (September 24, 2025)
+- ❌ ~~`gemini-1.5-pro`~~ - DEPRECATED (September 24, 2025)
+- ❌ ~~`gemini-1.0-pro`~~ - DEPRECATED
 
 **For Legal Document Parsing:**
-- Use **`gemini-1.5-flash`** for most documents (fast, cost-effective, accurate)
-- Use **`gemini-1.5-pro`** for complex contracts with tables and charts (highest accuracy)
+- Use **`gemini-2.0-flash-exp`** for most documents (fast, cost-effective)
+- Use **`gemini-2.5-pro`** for complex contracts with tables and charts (highest accuracy)
 
-**Note:** Preview models may have breaking changes. Check the [Vertex AI model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models) for the latest availability in your region.
+**Note:** Check the [Vertex AI model documentation](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/models) for the latest availability in your region.
 
 ### Example: Legal Document Processing
 
@@ -165,7 +177,7 @@ if not os.environ.get("GCP_PROJECT"):
 result = parse(
     "sensitive_legal_document.pdf",
     parser_type="LLM_PARSE",
-    model="gemini-1.5-pro",
+    model="gemini-2.0-flash-exp",  # Use current model
     temperature=0.0,  # Deterministic output
 )
 

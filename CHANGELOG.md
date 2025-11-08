@@ -224,6 +224,11 @@
 * Updated `parse_image_with_gemini` to support both standard Gemini API and Vertex AI endpoints
 * Added `role` field to request payload for Vertex AI compatibility
 * Simplified authentication to use Application Default Credentials only
+* Now supports both `GCP_PROJECT` and `GOOGLE_CLOUD_PROJECT` environment variables (suppresses SDK warnings)
 
 ### Fixed
 * Vertex AI API request format now includes required `role: user` field in contents
+
+### Important Notes
+* ⚠️ Gemini 1.5 models (gemini-1.5-flash, gemini-1.5-pro) were deprecated on September 24, 2025
+* Use gemini-2.0-flash-exp or gemini-2.5-flash for Vertex AI document parsing

@@ -359,7 +359,7 @@ def parse(
             for url in urls:
                 if "](" in url:
                     url = url.split("](")[-1]
-                logger.debug(f"Reading content from {url}")
+                logger.debug("Reading content from URL")
                 if not url.startswith("http"):
                     url = "https://" + url
 
@@ -443,7 +443,7 @@ def parse_with_schema(
 
         response = resp_dict.get("response", "")
         response = response.split("```json")[-1].split("```")[0].strip()
-        logger.debug(f"Processing page {page_num + 1} with response: {response}")
+        logger.debug(f"Processing page {page_num + 1}")
         new_dict = json.loads(response)
         responses.append(new_dict)
 
@@ -494,7 +494,7 @@ def parse_to_latex(
         )
         response = resp_dict.get("response", "").strip()
         response = response.split("```latex")[-1].split("```")[0].strip()
-        logger.debug(f"Processing page {page_num + 1} with response:\n{response}")
+        logger.debug(f"Processing page {page_num + 1}")
         responses.append(response)
 
     return "\n\n".join(responses)

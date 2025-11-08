@@ -443,7 +443,7 @@ def parse_image_with_gemini(
 
     if use_vertex_ai:
         # Use Vertex AI endpoint with OAuth2 authentication
-        logger.debug(f"Using Vertex AI endpoint: {gcp_project} in {gcp_region}")
+        logger.debug("Using Vertex AI endpoint")
         try:
             from google.auth.transport.requests import Request
             import google.auth
@@ -494,7 +494,7 @@ def parse_image_with_gemini(
     except requests.Timeout as e:
         raise HTTPError(f"Timeout error occurred: {e}")
     except requests.HTTPError as e:
-        logger.error(f"HTTP error: {e.response.status_code} - {e.response.text}")
+        logger.error(f"HTTP error: {e.response.status_code}")
         raise
 
     result = response.json()
@@ -750,7 +750,7 @@ def parse_with_api(path: str, api: str, **kwargs) -> List[Dict] | str:
     Returns:
         Dict: Dictionary containing parsed document data
     """
-    logger.debug(f"Parsing with {api} API and model {kwargs['model']}")
+    logger.debug(f"Parsing with {api} API")
 
     # Handle different input types
     mime_type, _ = mimetypes.guess_type(path)
@@ -798,7 +798,7 @@ def parse_with_api(path: str, api: str, **kwargs) -> List[Dict] | str:
         token_usage = response["usage"]
 
         if kwargs.get("verbose", None):
-            logger.debug(f"Page {page_num + 1} response: {page_text}")
+            logger.debug(f"Page {page_num + 1} parsed successfully")
 
         # Extract content between output tags if present
         result = page_text

@@ -94,12 +94,12 @@ def parse_static_doc(path: str, **kwargs) -> Dict:
     elif "wordprocessing" in file_type:
         return parse_with_docx(path, **kwargs)
     elif file_type == "text/html":
-        logger.debug(f"Parsing HTML file: {path}")
+        logger.debug("Parsing HTML file")
         with open(path, "r", errors="ignore") as f:
             html_content = f.read()
             return html_to_markdown(html_content, kwargs["title"])
     elif file_type == "text/plain":
-        logger.debug(f"Parsing plain text file: {path}")
+        logger.debug("Parsing plain text file")
         with open(path, "r", errors="ignore") as f:
             content = f.read()
             return {
@@ -223,7 +223,7 @@ def embed_links_in_text(page, text, links):
                 text_span.append(word)
 
         if start_pos is None:
-            logger.warning(f"No matching words found for link: {uri}")
+            logger.warning("No matching words found for link")
             continue
 
         # Set start_pos to previous space.
@@ -239,8 +239,8 @@ def embed_links_in_text(page, text, links):
             )
             offset += len(uri) + 4  # Adjust offset for added link syntax
         else:
-            logger.warning(f"No matching text found for link: {uri}")
-    logger.debug(f"Embedded {len(links)} links into text: {text}.")
+            logger.warning(f"No matching text found for link")
+    logger.debug(f"Embedded {len(links)} links into text.")
     return text
 
 

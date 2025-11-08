@@ -324,7 +324,7 @@ def get_webpage_soup(url: str) -> BeautifulSoup:
         soup = BeautifulSoup(html, "html.parser")
     except Exception as e:
         logger.debug(
-            f"Error reading HTML content from URL, attempting with default https request: {str(e)}"
+            f"Error reading HTML content from URL, attempting with default https request"
         )
         response = requests.get(url)
         soup = BeautifulSoup(
@@ -405,7 +405,7 @@ def recursive_read_html(url: str, depth: int, visited_urls: set = None) -> Dict:
     try:
         content = read_html_content(url)
     except Exception as e:
-        print(f"Error processing URL {url}: {str(e)}")
+        logger.error(f"Error processing URL: {str(e)}")
         return {
             "raw": "",
             "segments": [],
@@ -514,7 +514,7 @@ def router(path: str, priority: str = "speed", autoselect_llm: bool = False) -> 
         for model, _ in ranking:
             api_provider = get_api_provider_for_model(model)
             if is_api_key_set(api_provider):
-                logger.debug(f"Selected model: {model}.")
+                logger.debug("Selected model for parsing.")
                 model_name = model
                 return "LLM_PARSE", model_name
 
@@ -535,7 +535,7 @@ def router(path: str, priority: str = "speed", autoselect_llm: bool = False) -> 
             logger.debug("Using STATIC_PARSE for PDF with hyperlinks and no images.")
             return "STATIC_PARSE", None
         logger.debug(
-            f"Using LLM_PARSE because PDF has image ({has_image}) or has no hyperlink ({has_hyperlink})."
+            "Using LLM_PARSE for PDF parsing."
         )
         return "LLM_PARSE", model_name
     else:

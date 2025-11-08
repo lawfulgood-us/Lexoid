@@ -7,6 +7,7 @@ import joblib
 import numpy as np
 import pandas as pd
 import torch
+from loguru import logger
 from scipy.special import softmax
 from skimage.feature import hog
 from skimage.transform import resize
@@ -206,7 +207,7 @@ class DocumentRankedLLMSelector:
         self.processor = None
 
         self._load_or_build_doc_embeddings()
-        print(f"Loaded {len(self.doc_names)} document embeddings.")
+        logger.debug(f"Loaded {len(self.doc_names)} document embeddings.")
 
     def _load_or_build_doc_embeddings(self):
         """Load or compute and save document embeddings."""
@@ -216,7 +217,7 @@ class DocumentRankedLLMSelector:
             self.scaler = joblib.load(self.scaler_path)
             return
 
-        print("Extracting and saving document embeddings...")
+        logger.info("Extracting and saving document embeddings...")
         df = pd.read_csv(self.results_csv)
         grouped = df.groupby("Input File")
         self.doc_names = []
@@ -242,7 +243,7 @@ class DocumentRankedLLMSelector:
             self.embeddings.append(features)
             self.doc_names.append(base_name)
 
-        print(f"Extracted {len(self.doc_names)} document embeddings.")
+        logger.info(f"Extracted {len(self.doc_names)} document embeddings.")
 
         self.embeddings = np.array(self.embeddings)
         self.embeddings = self.scaler.fit_transform(self.embeddings)
@@ -264,15 +265,15 @@ class DocumentRankedLLMSelector:
         sims = cosine_similarity(query_vec, self.embeddings)[0]
 
         ranked = sorted(zip(self.doc_names, sims), key=lambda x: x[1], reverse=True)
-        print(f"Ranked documents: {ranked}")
+        logger.debug(f"Ranked {len(ranked)} documents by similarity")
         return ranked
 
     def rank_models(self, query_path: str) -> List[Tuple[str, float]]:
         # Step 1: Find the most similar document
         top_docs = self.rank_documents(query_path)
         most_similar_doc, similarity = top_docs[0]
-        print(
-            f"Most similar document to {query_path}: {most_similar_doc} (sim={similarity:.4f})"
+        logger.debug(
+            f"Most similar document found (similarity={similarity:.4f})"
         )
 
         # Step 2: Load model results for that document
@@ -294,7 +295,7 @@ class DocumentRankedLLMSelector:
     def weighted_rank_models(self, query_path: str) -> List[Tuple[str, float]]:
         # Step 1: Get top-K similar documents
         top_docs = self.rank_documents(query_path)  # List of (doc_name, similarity)
-        print(f"Top documents for {query_path}: {top_docs}")
+        logger.debug(f"Found {len(top_docs)} similar documents for ranking")
         doc_names, similarities = zip(*top_docs)
 
         # Step 2: Normalize the similarities for weighting
@@ -343,6 +344,6 @@ if __name__ == "__main__":
     )
     query_doc = "examples/inputs/purchase_order_invoice.png"
     ranked_docs = doc_selector.rank_models(query_doc)
-    print("Ranked Documents:")
-    for doc, score in ranked_docs:
-        print(f"{doc}: {score:.4f}")
+    logger.info(f"Ranked {len(ranked_docs)} models by score")
+    for i, (doc, score) in enumerate(ranked_docs, 1):
+        logger.info(f"Model {i}: score={score:.4f}")

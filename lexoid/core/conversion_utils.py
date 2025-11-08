@@ -121,7 +121,7 @@ def save_webpage_as_pdf(url: str, output_path: str) -> str:
     web.load(QUrl(url))
 
     def handle_print_finished(filename, status):
-        print(f"PDF saved to: {filename}")
+        logger.debug("PDF saved successfully")
         app.quit()
 
     def handle_load_finished(status):
@@ -184,7 +184,7 @@ def convert_to_pdf(input_path: str, output_path: str) -> str:
         str: The path to the saved PDF file.
     """
     if input_path.startswith(("http://", "https://")):
-        logger.debug(f"Converting webpage {input_path} to PDF...")
+        logger.debug("Converting webpage to PDF...")
         return save_webpage_as_pdf(input_path, output_path)
     file_type = mimetypes.guess_type(input_path)[0]
     if file_type.startswith("image/"):

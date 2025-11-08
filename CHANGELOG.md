@@ -208,3 +208,27 @@
 
 ### Fixed
 * Switch from `os.system()` to `subprocess.run()` to avoid injection via doc path
+
+## [0.1.19] - Unreleased
+
+### Added
+* **Google Vertex AI support** - Enhanced data privacy and compliance for sensitive applications
+  * Configure via `GCP_PROJECT` and `GCP_REGION` environment variables
+  * Uses OAuth2 authentication with Google Cloud credentials
+  * Maintains full backward compatibility with standard Gemini API
+  * See [Vertex AI Setup Guide](docs/vertex_ai_setup.md) for configuration details
+* Unit tests for Vertex AI integration and backward compatibility
+* Example script demonstrating Vertex AI usage
+
+### Changed
+* Updated `parse_image_with_gemini` to support both standard Gemini API and Vertex AI endpoints
+* Added `role` field to request payload for Vertex AI compatibility
+* Simplified authentication to use Application Default Credentials only
+* Now supports both `GCP_PROJECT` and `GOOGLE_CLOUD_PROJECT` environment variables (suppresses SDK warnings)
+
+### Fixed
+* Vertex AI API request format now includes required `role: user` field in contents
+
+### Important Notes
+* ⚠️ Gemini 1.5 models (gemini-1.5-flash, gemini-1.5-pro) were deprecated on September 24, 2025
+* Use gemini-2.0-flash-exp or gemini-2.5-flash for Vertex AI document parsing

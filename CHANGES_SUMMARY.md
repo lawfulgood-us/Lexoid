@@ -145,12 +145,12 @@ In your dependent project:
 
 **requirements.txt:**
 ```txt
-lexoid @ git+https://github.com/jefffohl/Lexoid.git@vertex-ai-support
+lexoid @ git+https://github.com/lawfulgood-us/Lexoid.git@vertex-ai-support
 ```
 
 **Or with Poetry:**
 ```toml
-lexoid = {git = "https://github.com/jefffohl/Lexoid.git", branch = "vertex-ai-support"}
+lexoid = {git = "https://github.com/lawfulgood-us/Lexoid.git", branch = "vertex-ai-support"}
 ```
 
 ### Docker
@@ -158,7 +158,7 @@ lexoid = {git = "https://github.com/jefffohl/Lexoid.git", branch = "vertex-ai-su
 ```dockerfile
 FROM python:3.10-slim
 RUN apt-get update && apt-get install -y git
-RUN pip install git+https://github.com/jefffohl/Lexoid.git@vertex-ai-support
+RUN pip install git+https://github.com/lawfulgood-us/Lexoid.git@vertex-ai-support
 ```
 
 ## Benefits

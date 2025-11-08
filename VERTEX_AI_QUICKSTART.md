@@ -91,7 +91,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install Lexoid from your fork
-RUN pip install git+https://github.com/jefffohl/Lexoid.git@vertex-ai-support
+RUN pip install git+https://github.com/lawfulgood-us/Lexoid.git@vertex-ai-support
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt
@@ -129,7 +129,7 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
 # Install Lexoid from your fork
-RUN pip install git+https://github.com/jefffohl/Lexoid.git@vertex-ai-support
+RUN pip install git+https://github.com/lawfulgood-us/Lexoid.git@vertex-ai-support
 
 COPY requirements.txt .
 RUN pip install -r requirements.txt

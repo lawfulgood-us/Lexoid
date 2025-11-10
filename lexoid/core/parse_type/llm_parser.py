@@ -20,6 +20,8 @@ from PIL import Image
 from requests.exceptions import HTTPError
 from together import Together
 from transformers import AutoModelForVision2Seq, AutoProcessor
+from google import genai
+from google.genai.types import HttpOptions, GenerateContentConfig, ThinkingConfig
 
 from lexoid.core.conversion_utils import (
     convert_image_to_pdf,
@@ -406,8 +408,9 @@ def parse_image_with_gemini(
     # Support both GCP_PROJECT and GOOGLE_CLOUD_PROJECT (standard GCP env var)
     gcp_project = os.environ.get("GCP_PROJECT") or os.environ.get("GOOGLE_CLOUD_PROJECT")
     gcp_region = os.environ.get("GCP_REGION") or os.environ.get("GOOGLE_CLOUD_REGION", "us-west1")
+    use_vertex_ai = gcp_project is not None and gcp_region is not None
 
-    use_vertex_ai = gcp_project is not None
+    prompt = ""
     
     if "system_prompt" in kwargs:
         prompt = kwargs["system_prompt"]
@@ -418,93 +421,101 @@ def parse_image_with_gemini(
             custom_instruction = ""
         prompt = PARSER_PROMPT.format(custom_instructions=custom_instruction)
 
-    generation_config = {
-        "temperature": kwargs.get("temperature", 0),
-    }
-    if kwargs["model"] == "gemini-2.5-pro":
-        generation_config["thinkingConfig"] = {"thinkingBudget": 128}
-
-    # Build content structure
+    # Build content structure (needed for both paths)
     content = {
+        "role": "user",
         "parts": [
-            {"text": prompt},
-            {"inline_data": {"mime_type": mime_type, "data": base64_file}},
+            {"inlineData": {"mimeType": mime_type, "data": base64_file}},
         ]
     }
     
-    # Vertex AI requires explicit "role" field, standard Gemini API doesn't
-    if use_vertex_ai:
-        content["role"] = "user"
-    
-    payload = {
-        "contents": [content],
-        "generationConfig": generation_config,
-    }
+    raw_text = ""
+    input_tokens = 0
+    output_tokens = 0
+    total_tokens = 0
 
     if use_vertex_ai:
-        # Use Vertex AI endpoint with OAuth2 authentication
-        logger.debug("Using Vertex AI endpoint")
         try:
-            from google.auth.transport.requests import Request
-            import google.auth
-        except ImportError:
-            raise ImportError(
-                "google-cloud-aiplatform is required for Vertex AI. "
-                "Install it with: pip install google-cloud-aiplatform"
+            logger.debug("Using Vertex AI")
+            client = genai.Client(
+                vertexai=True, 
+                project=gcp_project, 
+                location=gcp_region, 
+                http_options=HttpOptions(api_version="v1")
             )
-        
-        # Get credentials using Application Default Credentials
-        # Works automatically in Cloud Run (uses attached service account)
-        # and locally (uses gcloud auth application-default login)
-        credentials, _ = google.auth.default(
-            scopes=["https://www.googleapis.com/auth/cloud-platform"]
-        )
-        
-        # Refresh token if needed
-        if not credentials.valid:
-            credentials.refresh(Request())
-        
-        # Construct Vertex AI endpoint
-        model_name = kwargs["model"]
-        url = (
-            f"https://{gcp_region}-aiplatform.googleapis.com/v1/"
-            f"projects/{gcp_project}/locations/{gcp_region}/"
-            f"publishers/google/models/{model_name}:generateContent"
-        )
-        
-        headers = {
-            "Authorization": f"Bearer {credentials.token}",
-            "Content-Type": "application/json",
-        }
+            
+            # Build config
+            config = GenerateContentConfig(
+                system_instruction=prompt,
+                temperature=kwargs.get("temperature", 0),
+            )
+            
+            # Add thinking config for gemini-2.5-pro
+            if kwargs["model"] == "gemini-2.5-pro":
+                config.thinking_config = ThinkingConfig(thinking_budget=128)
+            
+            response = client.models.generate_content(
+                model=kwargs["model"],
+                contents=[content],
+                config=config,
+            )
+            raw_text = response.text
+            usage = response.usage_metadata
+            input_tokens = usage.prompt_token_count if usage else 0
+            output_tokens = usage.candidates_token_count if usage else 0
+            total_tokens = input_tokens + output_tokens
+        except Exception:
+            # Don't log error details to avoid leaking sensitive information
+            logger.error("Error using Vertex AI - check credentials and permissions")
+            raise
     else:
         # Use standard Gemini API with API key
-        api_key = os.environ.get("GOOGLE_API_KEY")
-        if not api_key:
-            raise ValueError(
-                "Either GOOGLE_API_KEY (for Gemini API) or GCP_PROJECT "
-                "(for Vertex AI) environment variable must be set"
+        system_instruction = {
+            "role": "system",
+            "parts": [
+                {"text": prompt},
+            ]
+        }
+        generation_config = {
+            "temperature": kwargs.get("temperature", 0),
+        }
+        if kwargs["model"] == "gemini-2.5-pro":
+            generation_config["thinkingConfig"] = {"thinkingBudget": 128}
+
+        payload = {
+            "contents": [content],
+            "generationConfig": generation_config,
+            "systemInstruction": system_instruction,
+        }
+        try:
+            logger.debug("Using standard Gemini API")
+            api_key = os.environ.get("GOOGLE_API_KEY")
+            if not api_key:
+                raise ValueError(
+                    "Either GOOGLE_API_KEY (for Gemini API) or GCP_PROJECT "
+                    "(for Vertex AI) environment variable must be set"
+                )
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{kwargs['model']}:generateContent?key={api_key}"
+            headers = {"Content-Type": "application/json"}
+            response = requests.post(url, json=payload, headers=headers, timeout=120)
+            response.raise_for_status()
+            result = response.json()
+            raw_text = "".join(
+                part["text"]
+                for candidate in result.get("candidates", [])
+                for part in candidate.get("content", {}).get("parts", [])
+                if "text" in part
             )
-        
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{kwargs['model']}:generateContent?key={api_key}"
-        headers = {"Content-Type": "application/json"}
+            token_usage = result["usageMetadata"]
+            input_tokens = token_usage.get("promptTokenCount", 0)
+            output_tokens = token_usage.get("candidatesTokenCount", 0)
+            total_tokens = input_tokens + output_tokens
 
-    try:
-        response = requests.post(url, json=payload, headers=headers, timeout=120)
-        response.raise_for_status()
-    except requests.Timeout as e:
-        raise HTTPError(f"Timeout error occurred: {e}")
-    except requests.HTTPError as e:
-        logger.error(f"HTTP error: {e.response.status_code}")
-        raise
-
-    result = response.json()
-
-    raw_text = "".join(
-        part["text"]
-        for candidate in result.get("candidates", [])
-        for part in candidate.get("content", {}).get("parts", [])
-        if "text" in part
-    )
+        except requests.Timeout as e:
+            raise HTTPError(f"Timeout error occurred")
+        except requests.HTTPError as e:
+            raise HTTPError(f"HTTP error: {e.response.status_code}")
 
     combined_text = raw_text
     if "<output>" in raw_text:
@@ -512,10 +523,6 @@ def parse_image_with_gemini(
     if "</output>" in combined_text:
         combined_text = combined_text.split("</output>")[0].strip()
 
-    token_usage = result["usageMetadata"]
-    input_tokens = token_usage.get("promptTokenCount", 0)
-    output_tokens = token_usage.get("candidatesTokenCount", 0)
-    total_tokens = input_tokens + output_tokens
     return {
         "raw": combined_text.replace("<page-break>", "\n\n"),
         "segments": [
